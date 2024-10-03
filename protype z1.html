@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+
+        #title {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        #searchForm {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #innerDiv {
+            display: inline-block;
+        }
+
+        input[type="text"] {
+            height: 40px;
+            border-radius: 20px;
+            width: 300px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        button {
+            height: 45px;
+            border-radius: 20px;
+            border: 0;
+            background-color: #0044cc;
+            color: white;
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #002aff;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: #0044cc;
+            font-size: 1.2rem;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+    <h1 id="title">ZIGLE Search</h1>
+
+    <form id="searchForm">
+        <div id="innerDiv">
+            <input type="text" id="keyword" placeholder="Enter keyword" required>
+            <button type="submit">Search</button>
+        </div>
+    </form>
+
+    <h2 style="text-align: center; margin-top: 20px;">Search Results:</h2>
+    <ul id="results">
+        <!-- Search results will be displayed here -->
+    </ul>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // Firebase 초기 설정 (Firebase 콘솔에서 제공하는 설정 복사)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBRMHoZNBGPzdyHHatdPilmFSuNmFmR94o",
+            authDomain: "zigle-39981.firebaseapp.com",
+            projectId: "zigle-39981",
+            storageBucket: "zigle-39981.appspot.com",
+            messagingSenderId: "23590063796",
+            appId: "1:23590063796:web:34eb32f4e3e50fee4191e1",
+            measurementId: "G-JTZPYND13K"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Firestore에서 데이터를 가져오는 함수
+        async function fetchCrawlData() {
+            const crawlData = [];
+            const querySnapshot = await db.collection("websites").get();
+            querySnapshot.forEach((doc) => {
+                crawlData.push(doc.data());
+            });
+            return crawlData;
+        }
+
+        // 검색 함수
+        function searchCrawlData(crawlData, keyword) {
+            keyword = keyword.toLowerCase();
+            const results = [];
+
+            // 데이터에서 키워드를 검색
+            crawlData.forEach(entry => {
+                // title과 most_common_words가 null인지 체크
+                const title = entry.title ? entry.title.toLowerCase() : '';
+                const words = entry.most_common_words ? entry.most_common_words.map(w => Object.keys(w)[0].toLowerCase()) : [];
+
+                // 제목 또는 most_common_words에서 키워드가 있는지 확인
+                if (title.includes(keyword) || words.some(word => word.includes(keyword))) {
+                    results.push(entry);
+                }
+            });
+
+            return results;
+        }
+
+        // 검색 결과를 화면에 표시하는 함수
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';  // 기존 내용을 지움
+
+            if (results.length > 0) {
+                results.forEach(result => {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = result.url;
+                    a.textContent = result.title || 'No title';  // 제목이 없으면 'No title' 표시
+                    a.target = "_blank";  // 새 창에서 링크 열기
+                    li.appendChild(a);
+                    resultsContainer.appendChild(li);
+                });
+            } else {
+                resultsContainer.innerHTML = '<li>No results found.</li>';  // 검색 결과가 없으면 메시지 표시
+            }
+        }
+
+        // 폼 제출 이벤트 처리
+        document.getElementById('searchForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const keyword = document.getElementById('keyword').value;
+
+            // Firestore에서 데이터를 가져오고 검색 수행
+            const crawlData = await fetchCrawlData();
+            const searchResults = searchCrawlData(crawlData, keyword);
+            displayResults(searchResults);
+        });
+    </script>
+</body>
+</html>

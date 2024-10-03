@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE Search with Proxy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        #searchForm {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #searchForm input[type="text"] {
+            height: 40px;
+            border-radius: 20px;
+            width: 300px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        #searchForm button {
+            height: 45px;
+            border-radius: 30px;
+            border: 0;
+            background-color: #0044cc;
+            color: white;
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #searchForm button:hover {
+            background-color: #002aff;
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        ul li {
+            margin-bottom: 10px;
+        }
+
+        ul li a {
+            text-decoration: none;
+            color: #0044cc;
+            font-size: 1.2rem;
+        }
+
+        ul li a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>ZIGLE Search with Proxy</h1>
+
+    <form id="searchForm">
+        <input type="text" id="url" placeholder="Enter URL" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="result"></div>
+
+    <ul id="linksList">
+        <!-- 여기에 동적으로 링크를 추가할 예정입니다 -->
+    </ul>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById('url').value;
+            const resultDiv = document.getElementById('result');
+            const linksList = document.getElementById('linksList');
+
+            // 프록시 서버에 요청 보내기
+            fetch('https://anamy.pythonanywhere.com/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: urlInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);  // 응답 데이터 확인용 콘솔 출력
+                resultDiv.innerHTML = `<p>Status Code: ${data.status_code || ''}</p><p>Content: ${data.content || ''}</p>`;
+
+                // 예시로 링크를 추가 (추가된 링크도 프록시 통하게 처리)
+                linksList.innerHTML = `
+                    <li><a href="${urlInput}" data-proxy="true">Reload ${urlInput} through proxy</a></li>
+                    <li><a href="https://example.com" data-proxy="true">Open Example.com through proxy</a></li>
+                `;
+
+                // 각 링크에 클릭 이벤트를 연결하여 프록시 서버를 통해 열리게 설정
+                document.querySelectorAll('a[data-proxy="true"]').forEach(link => {
+                    link.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        const linkUrl = this.href;
+
+                        // 링크 클릭 시 프록시 서버로 요청
+                        fetch('https://anamy.pythonanywhere.com/proxy', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ url: linkUrl })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            resultDiv.innerHTML = `<p>Status Code: ${data.status_code || ''}</p><p>Content: ${data.content || ''}</p>`;
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            resultDiv.textContent = 'Error occurred while fetching the link content';
+                        });
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.textContent = 'Error occurred while fetching URL';
+            });
+        });
+    </script>
+</body>
+</html>

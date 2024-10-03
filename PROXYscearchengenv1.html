@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE Search with Proxy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        #searchOnly, #searchWithResults {
+            display: none;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #searchForm {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #searchForm input[type="text"] {
+            height: 40px;
+            border-radius: 20px;
+            width: 300px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        #searchForm button {
+            height: 45px;
+            border-radius: 30px;
+            border: 0;
+            background-color: #0044cc;
+            color: white;
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #searchForm button:hover {
+            background-color: #002aff;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: #0044cc;
+            font-size: 1.2rem;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* 기본적으로 첫 화면은 검색창만 표시 */
+        #searchOnly {
+            display: block;
+        }
+
+        #searchWithResults {
+            display: none;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            #searchForm input[type="text"], #searchForm button {
+                width: 90%;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 처음 검색창만 있는 페이지 -->
+    <div id="searchOnly">
+        <h1><a style="font-size: 50px; text-decoration: none;" href="./index.html">ZIGLE</a></h1>
+        <form id="initialSearchForm">
+            <div id="searchForm">
+                <input type="text" id="keyword" placeholder="Enter keyword" required>
+                <button type="submit">Search</button>
+            </div>
+        </form>
+        <div style="text-align: center; margin-left: 5%; margin-right: 5%;">
+            <br><br><br><br>
+            <h2>Welcome To ZIGLE</h2>
+            <p>이 버전의 ZIGLE은 프로토타입으로 약 10000개의 웹페이지만 색인되어 있음. <br> 웹 색인을 위해 자체개발한 Zbot을 사용함. <br> <br></p>
+            <h2>ZIGLE 프로젝트에 참여하세요</h2>
+            <p>프로젝트 ZIGLE에 참여하고 싶은 경우 <a href="mailto:rrriseeee@gmail.com">rrriseeee@gmail.com</a>으로 연락하세요.</p>
+        </div>
+    </div>
+
+    <!-- 검색 결과와 검색창이 함께 있는 페이지 -->
+    <div id="searchWithResults">
+        <h1><a style="font-size: 50px; text-decoration: none;" href="./index.html">ZIGLE</a></h1>
+        <form id="searchFormWithResults">
+            <div id="searchForm">
+                <input type="text" id="keywordWithResults" placeholder="Enter keyword" required>
+                <button type="submit">Search</button>
+            </div>
+        </form>
+
+        <h2 style="text-align: center; margin-top: 20px;">Search Results:</h2>
+        <ul id="results">
+            <!-- 검색 결과가 여기에 표시됩니다 -->
+        </ul>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button id="loadButton">Load Content through Proxy</button>
+            <div id="proxyResult" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let crawlData = [];
+
+        // JSON 파일을 로드하는 함수
+        fetch('crawl_data.json')
+            .then(response => response.json())
+            .then(data => {
+                crawlData = data;  // JSON 데이터를 전역 변수에 저장
+            })
+            .catch(error => {
+                console.error("Error loading JSON:", error);
+            });
+
+        // 처음 검색창만 표시하는 함수
+        function showInitialSearch() {
+            document.getElementById('searchOnly').style.display = 'block';
+            document.getElementById('searchWithResults').style.display = 'none';
+        }
+
+        // 검색 결과와 함께 검색창을 표시하는 함수
+        function showSearchWithResults() {
+            document.getElementById('searchOnly').style.display = 'none';
+            document.getElementById('searchWithResults').style.display = 'block';
+        }
+
+        // 검색 함수
+        function searchCrawlData(keyword) {
+            keyword = keyword.toLowerCase();
+            const results = [];
+
+            // 데이터에서 키워드를 검색
+            crawlData.forEach(entry => {
+                const title = (entry.title || '').toLowerCase();
+                const words = entry.most_common_words.map(w => Object.keys(w)[0]);
+
+                // 제목 또는 most_common_words에서 키워드가 있는지 확인
+                if (title.includes(keyword) || words.some(word => word.includes(keyword))) {
+                    results.push(entry);
+                }
+            });
+
+            return results;
+        }
+
+        // 검색 결과를 화면에 표시하는 함수
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';  // 기존 내용을 지움
+
+            if (results.length > 0) {
+                results.forEach(result => {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = result.url;
+                    a.textContent = result.title || 'No title';  // 제목이 없으면 'No title' 표시
+                    a.target = "_blank";  // 새 창에서 링크 열기
+                    li.appendChild(a);
+                    resultsContainer.appendChild(li);
+                });
+            } else {
+                resultsContainer.innerHTML = '<li>No results found.</li>';  // 검색 결과가 없으면 메시지 표시
+            }
+        }
+
+        // 처음 검색창만 있는 폼의 제출 이벤트 처리
+        document.getElementById('initialSearchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const keyword = document.getElementById('keyword').value;
+            const searchResults = searchCrawlData(keyword);
+            displayResults(searchResults);
+            showSearchWithResults();  // 검색 결과를 표시하는 화면으로 전환
+        });
+
+        // 검색 결과와 함께 있는 폼의 제출 이벤트 처리
+        document.getElementById('searchFormWithResults').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const keyword = document.getElementById('keywordWithResults').value;
+            const searchResults = searchCrawlData(keyword);
+            displayResults(searchResults);
+        });
+
+        // 프록시 서버를 통한 버튼 클릭 처리
+        document.getElementById('loadButton').addEventListener('click', function() {
+            const targetUrl = 'https://example.com';  // 실제 요청하고 싶은 URL
+            fetch('https://anamy.pythonanywhere.com/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: targetUrl })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response from proxy:', data);
+                document.getElementById('proxyResult').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Crawl Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 12px;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Search in Crawled Data</h1>
+
+    <form id="searchForm">
+        <input type="text" id="keyword" placeholder="Enter keyword" required>
+        <button type="submit">Search</button>
+    </form>
+
+    <h2>Search Results:</h2>
+    <ul id="results">
+        <!-- Search results will be displayed here -->
+    </ul>
+
+    <script>
+        let crawlData = [];
+
+        // JSON 파일을 로드하는 함수
+        fetch('crawl_data.json')
+            .then(response => response.json())
+            .then(data => {
+                crawlData = data;  // JSON 데이터를 전역 변수에 저장
+            })
+            .catch(error => {
+                console.error("Error loading JSON:", error);
+            });
+
+        // 검색 함수
+        function searchCrawlData(keyword) {
+            keyword = keyword.toLowerCase();
+            const results = [];
+
+            // 데이터에서 키워드를 검색
+            crawlData.forEach(entry => {
+                // title이 null일 수 있으므로 기본값을 설정
+                const title = (entry.title || '').toLowerCase();
+                const words = entry.most_common_words.map(w => Object.keys(w)[0]);
+
+                if (title.includes(keyword) || words.some(word => word.includes(keyword))) {
+                    results.push(entry);
+                }
+            });
+
+            return results;
+        }
+
+        // 검색 결과를 화면에 표시하는 함수
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';  // 기존 내용을 지움
+
+            if (results.length > 0) {
+                results.forEach(result => {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = result.url;
+                    a.textContent = result.title || 'No title';  // 제목이 없으면 'No title' 표시
+                    a.target = "_blank";  // 새 창에서 링크 열기
+                    li.appendChild(a);
+                    resultsContainer.appendChild(li);
+                });
+            } else {
+                resultsContainer.innerHTML = '<li>No results found.</li>';  // 검색 결과가 없으면 메시지 표시
+            }
+        }
+
+        // 폼 제출 이벤트 처리
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const keyword = document.getElementById('keyword').value;
+            const searchResults = searchCrawlData(keyword);
+            displayResults(searchResults);
+        });
+    </script>
+</body>
+</html>

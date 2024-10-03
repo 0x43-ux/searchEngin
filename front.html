@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE URL Processor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        #urlForm {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        input[type="text"] {
+            height: 40px;
+            border-radius: 20px;
+            width: 300px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        button {
+            height: 45px;
+            border-radius: 30px;
+            border: 0;
+            background-color: #0044cc;
+            color: white;
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #002aff;
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>ZIGLE URL Processor</h1>
+    <form id="urlForm">
+        <input type="text" id="urlInput" placeholder="Enter URL" required>
+        <button type="submit">Process URL</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        // URL 처리 요청
+        document.getElementById('urlForm').addEventListener('submit', function (event) {
+            event.preventDefault();  // 폼의 기본 제출 방지
+
+            const url = document.getElementById('urlInput').value;
+
+            // 서버로 URL을 POST 요청으로 전송
+            fetch('https://anamy.pythonanywhere.com/process-url', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url })  // 서버로 보낼 데이터
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('result').innerHTML = `<p>Error: ${data.error}</p>`;
+                    } else {
+                        document.getElementById('result').innerHTML = `
+                        <p><strong>Title:</strong> ${data.title}</p>
+                        <p><strong>First Paragraph:</strong> ${data.first_paragraph}</p>
+                    `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `<p>Error: ${error}</p>`;
+                });
+        });
+    </script>
+</body>
+
+</html>

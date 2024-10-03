@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        #searchForm {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #searchForm input[type="text"] {
+            height: 40px;
+            border-radius: 20px;
+            width: 300px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        #searchForm button {
+            height: 45px;
+            border-radius: 30px;
+            border: 0;
+            background-color: #0044cc;
+            color: white;
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #searchForm button:hover {
+            background-color: #002aff;
+        }
+    </style>
+</head>
+<body>
+    <h1>ZIGLE Search</h1>
+
+    <form id="searchForm">
+        <input type="text" id="url" placeholder="Enter URL" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="result" style="text-align: center; margin-top: 20px;"></div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // 페이지 새로고침 방지
+            const urlInput = document.getElementById('url').value;
+            const resultDiv = document.getElementById('result');
+
+            // Fetch 요청 보내기
+            fetch('https://anamy.pythonanywhere.com/process-url', {  // Flask 서버의 엔드포인트 URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: urlInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 서버에서 받은 응답 표시
+                resultDiv.textContent = data.message || 'URL processed successfully';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.textContent = 'Error occurred while processing URL';
+            });
+        });
+    </script>
+</body>
+</html>

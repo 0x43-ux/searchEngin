@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE Search with Proxy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+        }
+
+        #searchForm {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #searchForm input[type="text"] {
+            height: 40px;
+            border-radius: 20px;
+            width: 300px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        #searchForm button {
+            height: 45px;
+            border-radius: 30px;
+            border: 0;
+            background-color: #0044cc;
+            color: white;
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #searchForm button:hover {
+            background-color: #002aff;
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ZIGLE Search with Proxy</h1>
+
+    <form id="searchForm">
+        <input type="text" id="url" placeholder="Enter URL" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById('url').value;
+            const resultDiv = document.getElementById('result');
+
+            // 프록시 서버에 요청 보내기
+            fetch('https://anamy.pythonanywhere.com/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: urlInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);  // 응답 데이터 확인용 콘솔 출력
+
+                if (data.status_code && data.content) {
+                    resultDiv.innerHTML = `<p>Status Code: ${data.status_code}</p><p>Content: ${data.content}</p>`;
+                } else {
+                    resultDiv.innerHTML = '<p>Something went wrong or invalid response received.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.textContent = 'Error occurred while fetching URL';
+            });
+        });
+    </script>
+    <button id="loadButton">Load Content through Proxy</button>
+
+    <script>
+        document.getElementById('loadButton').addEventListener('click', function() {
+            const targetUrl = 'https://example.com'; // 여기에 요청하고 싶은 URL
+            fetch('https://anamy.pythonanywhere.com/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: targetUrl })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response from proxy:', data);
+                // 원하는 데이터를 페이지에 표시
+                document.getElementById('proxyResult').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+    <div id="proxyResult"></div>
+</body>
+</html>

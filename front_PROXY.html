@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE Search with Proxy</title>
+</head>
+<body>
+    <h1>ZIGLE Search with Proxy</h1>
+
+    <form id="searchForm">
+        <input type="text" id="url" placeholder="Enter URL" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById('url').value;
+            const resultDiv = document.getElementById('result');
+
+            // 프록시 서버에 요청 보내기
+            fetch('https://anamy.pythonanywhere.com/proxy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: urlInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultDiv.textContent = data.message || 'No content received';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.textContent = 'Error occurred while fetching URL';
+            });
+        });
+    </script>
+</body>
+</html>

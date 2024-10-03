@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIGLE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+        }
+
+        #title {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        #searchForm {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #innerDiv {
+            display: inline-block;
+        }
+
+        input[type="text"] {
+            height: 40px;
+            border-radius: 20px;
+            width: 300px;
+            padding-left: 10px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        button {
+            height: 45px;
+            border-radius: 20px;
+            border: 0;
+            background-color: #0044cc;
+            color: white;
+            padding: 0 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #002aff;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: #0044cc;
+            font-size: 1.2rem;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+    <h1 id="title">ZIGLE</h1>
+
+    <form id="searchForm">
+        <div id="innerDiv">
+            <input type="text" id="keyword" placeholder="Enter keyword" required>
+            <button type="submit">Search</button>
+        </div>
+    </form>
+
+    <h2 style="text-align: center; margin-top: 20px;">Search Results:</h2>
+    <ul id="results">
+        <!-- Search results will be displayed here -->
+    </ul>
+
+    <script>
+        let crawlData = [];
+
+        // JSON 파일을 로드하는 함수
+        fetch('crawl_data.json')
+            .then(response => response.json())
+            .then(data => {
+                crawlData = data;  // JSON 데이터를 전역 변수에 저장
+            })
+            .catch(error => {
+                console.error("Error loading JSON:", error);
+            });
+
+        // 한국어와 영어를 구분하는 함수 (간단하게 유니코드 범위로 판별)
+        function isKorean(text) {
+            const koreanRegex = /[\u3131-\uD79D]/;  // 한글 자모와 한글 범위에 해당하는 유니코드
+            return koreanRegex.test(text);
+        }
+
+        // 검색 함수
+        function searchCrawlData(keyword) {
+            keyword = keyword.toLowerCase();
+            const results = [];
+
+            // 데이터에서 키워드를 검색하고 포함된 단어 수를 계산
+            crawlData.forEach(entry => {
+                const title = (entry.title || '').toLowerCase();
+                const words = entry.most_common_words.map(w => Object.keys(w)[0]);
+
+                let matchCount = 0;
+
+                // 제목에서 검색어가 포함되었는지 확인하고 가중치 추가
+                if (title.includes(keyword)) {
+                    const titleMatches = (title.match(new RegExp(keyword, 'g')) || []).length;
+                    matchCount += titleMatches * 30;  // 제목에서 일치하는 경우 가중치 30 추가
+                }
+
+                // 단어 목록에서 검색어가 몇 번 포함되었는지 확인
+                words.forEach(word => {
+                    if (word.includes(keyword)) {
+                        matchCount += (word.match(new RegExp(keyword, 'g')) || []).length;
+                    }
+                });
+
+                if (matchCount > 0) {
+                    results.push({
+                        entry: entry,
+                        matchCount: matchCount,
+                        isKorean: isKorean(title)
+                    });
+                }
+            });
+
+            // 검색 결과를 정렬: 한국어 우선, 그다음 매칭 개수가 많은 순서로 정렬
+            results.sort((a, b) => {
+                if (a.isKorean && !b.isKorean) {
+                    return -1;  // 한국어가 영어보다 우선
+                } else if (!a.isKorean && b.isKorean) {
+                    return 1;   // 영어가 뒤로 감
+                } else {
+                    return b.matchCount - a.matchCount;  // 매칭된 개수가 많은 순서로 정렬
+                }
+            });
+
+            return results.map(result => result.entry);
+        }
+
+        // 검색 결과를 화면에 표시하는 함수
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';  // 기존 내용을 지움
+
+            if (results.length > 0) {
+                results.forEach(result => {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = result.url;
+                    a.textContent = result.title || 'No title';  // 제목이 없으면 'No title' 표시
+                    a.target = "_blank";  // 새 창에서 링크 열기
+                    li.appendChild(a);
+                    resultsContainer.appendChild(li);
+                });
+            } else {
+                resultsContainer.innerHTML = '<li>No results found.</li>';  // 검색 결과가 없으면 메시지 표시
+            }
+        }
+
+        // 폼 제출 이벤트 처리
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const keyword = document.getElementById('keyword').value;
+            const searchResults = searchCrawlData(keyword);
+            displayResults(searchResults);
+        });
+    </script>
+</body>
+</html>
